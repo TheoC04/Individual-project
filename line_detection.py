@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import argparse
 from typing import List, Tuple, Optional, Union
+from picamera2 import Picamera2
+
 
 class LineDetector:
     """
@@ -122,6 +124,25 @@ def main():
         win = 'Line Detector (camera)'
         cv2.namedWindow(win, cv2.WINDOW_NORMAL)
         create_trackbars(win)
+
+        picamera2 = Picamera2()
+        config = picamera2.create_preview_configuration(
+            main={"size": (640, 480), "format": "BGR888"}
+        )
+        picamera2.configure(config)
+        picamera2.start()
+        try:
+            while True:
+                frame = picamera2.capture_array()
+                det = LineDetector(frame, resize_width=args.resize)
+                process_and_show(det, win)
+                key = cv2.waitKey(1) & 0xFF
+                if key == 27:  # ESC
+                    break
+                if cv2.getWindowProperty(win, cv2.WND_PROP_VISIBLE) < 1: #if window is closed
+                    break
+        finally:
+            picamera2.stop()
         cap = cv2.VideoCapture(args.camera)
         if not cap.isOpened():
             raise RuntimeError('Could not open camera')
