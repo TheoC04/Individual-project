@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import subprocess
 from picamera2 import Picamera2
 
 # ----------------------------
@@ -30,19 +31,31 @@ class LineDetector:
         return out
 
 # ----------------------------
-# GStreamer pipeline
+# Streaming configuration
 # ----------------------------
 LAPTOP_IP = "192.168.0.242"
-PORT = 5000
+PORT = 8554
+Width = 640
+Height = 480
+FPS = 30
 
-gst_pipeline = (
-    f'appsrc is-live=true block=true format=time '
-    f'caps=video/x-raw,format=BGR,width=640,height=480,framerate=30/1 ! '
-    f'videoconvert ! '
-    f'x264enc tune=zerolatency bitrate=1500 speed-preset=ultrafast key-int-max=30 ! '
-    f'rtph264pay config-interval=1 pt=96 ! '
-    f'udpsink host={LAPTOP_IP} port={PORT} sync=false'
-)
+
+# FFmpeg command to stream video
+ffmpeg = subprocess.Popen([
+    'ffmpeg',
+    '-y',
+    '-f', 'rawvideo',
+    '-pixel_format', 'bgr24',
+    '-video_size', f'{Width}x{Height}',
+    '-framerate', str(FPS),
+    '-i', '-',
+    '-c:v', 'libx264',
+    '-pix_fmt', 'yuv420p',
+    '-preset', 'ultrafast',
+    '-f', 'rtsp',
+    f'rtsp://{LAPTOP_IP}:{PORT}/live.sdp'
+], stdin=subprocess.PIPE)
+
 
 
 # ----------------------------
@@ -50,33 +63,32 @@ gst_pipeline = (
 # ----------------------------
 picam = Picamera2()
 config = picam.create_preview_configuration(
-    main={"size": (640, 480), "format": "BGR888"}
+    main={"size": (Width, Height), "format": "BGR888"}
 )
 picam.configure(config)
 picam.start()
 
-out = cv2.VideoWriter(
-    gst_pipeline,
-    cv2.CAP_GSTREAMER,
-    0,
-    30,
-    (640, 480),
-    True
-)
 
-if not out.isOpened():
-    print("❌ GStreamer pipeline FAILED to open")
-    exit(1)
-else:
-    print("✅ GStreamer pipeline opened")
 # ----------------------------
 # Main loop
 # ----------------------------
-while True:
-    frame = picam.capture_array()
-    det = LineDetector(frame)
-    edges = det.preprocess()
-    lines = det.detect_lines(edges)
-    output = det.draw_lines(lines)
-    #print (f"Detected {len(lines)} lines")
-    out.write(output)
+try:
+    while True:
+        frame = picam.capture_array()
+        detector = LineDetector(frame)
+        edges = detector.preprocess()
+        lines = detector.detect_lines(edges)
+        output_frame = detector.draw_lines(lines)
+
+        # Stream the processed frame
+        try:
+            ffmpeg.stdin.write(output_frame.tobytes())
+        except BrokenPipeError:
+            print("FFmpeg pipe closed")
+            break
+except KeyboardInterrupt:
+    print("Stopping...")
+finally:
+    ffmpeg.stdin.close()
+    ffmpeg.wait()
+    picam.stop()
