@@ -28,12 +28,14 @@ class XboxDriveNode(Node):
         )
 
         # Setup pigpio
+        '''
         self.pi = pigpio.pi()
         if not self.pi.connected:
             self.get_logger().error("pigpio not running! Run: sudo pigpiod")
             sys.exit()
 
         self.pi.set_servo_pulsewidth(GPIO_PIN, STEER_CENTER)
+        '''
 
         # Setup pygame joystick
         pygame.init()
@@ -55,12 +57,19 @@ class XboxDriveNode(Node):
 
         pygame.event.pump()
 
-        # Left stick vertical → speed
-        speed_axis = -self.joystick.get_axis(1)
-        speed = int(speed_axis * MAX_SPEED)
+        forward_trigger = self.joystick.get_axis(4)
+        backward_trigger = self.joystick.get_axis(5)
+
+        # Convert from (-1 to 1) → (0 to 1)
+        forward = (forward_trigger + 1) / 2
+        backward = (backward_trigger + 1) / 2
+
+        # Final speed
+        speed = int((forward - backward) * MAX_SPEED)
 
         # Right stick horizontal → steering
-        steer_axis = self.joystick.get_axis(3)
+        steer_axis = self.joystick.get_axis(2)
+
         steer_pulse = int(STEER_CENTER + steer_axis * STEER_RANGE)
 
         steer_pulse = max(
@@ -71,14 +80,14 @@ class XboxDriveNode(Node):
         # Publish message
         msg = SetVelocity()
         msg.speed = speed
-        msg.angle = 90
-        msg.rotate = 0
+        msg.steering_angle = steer_pulse
+        msg.rotation = 0
 
         self.publisher_.publish(msg)
         print(f"Published: speed={speed}, steer_pulse={steer_pulse}")
 
         # Move servo
-        self.pi.set_servo_pulsewidth(GPIO_PIN, steer_pulse)
+        # self.pi.set_servo_pulsewidth(GPIO_PIN, steer_pulse)
 
         self.get_logger().info(
             f"Speed: {speed} | Steering: {steer_pulse}"
@@ -92,7 +101,7 @@ class XboxDriveNode(Node):
         stop_msg.rotate = 0
 
         self.publisher_.publish(stop_msg)
-        self.pi.set_servo_pulsewidth(GPIO_PIN, STEER_CENTER)
+        #self.pi.set_servo_pulsewidth(GPIO_PIN, STEER_CENTER)
         self.pi.stop()
         pygame.quit()
 

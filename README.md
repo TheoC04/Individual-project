@@ -1,1 +1,41 @@
 # Individual-project
+## Build Instructions
+
+### Prerequisites
+- [List required tools/languages]
+
+### usefell command reminders
+
+1. ros2 pkg create car_control --build-type ament_python --dependencies rclpy chassis_control
+2. colcon build
+3. source instll/setub.bash
+4. ros2 interface show chassis_control/msg/SetVelocity
+
+
+### Steps
+1. Clone the repository
+    ```bash
+    git clone <repository-url>
+    cd Individual-project
+    ```
+
+2. Install dependencies
+    ```bash
+    [dependency installation command]
+    ```
+
+3. Build the project
+    ```bash
+    [build command]
+    ```
+
+4. Run the project
+    ```bash
+    [run command]
+    ```
+
+## Project Description
+[Add a brief description of what this project does]
+
+## License
+[Specify your license]

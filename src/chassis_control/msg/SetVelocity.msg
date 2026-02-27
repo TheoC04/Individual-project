@@ -1,3 +1,3 @@
 int32 speed
-int32 angle
-int32 rotate
+int32 steering_angle
+int32 rotations
