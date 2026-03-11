@@ -30,7 +30,7 @@
 
 3. Build the project
     ```bash
-    [build command]
+    colcon build
     ```
 
 4. Run the project
