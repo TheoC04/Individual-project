@@ -1,7 +1,9 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage
 import cv2
+
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 
 class USBCameraNode(Node):
@@ -10,10 +12,12 @@ class USBCameraNode(Node):
         super().__init__('usb_camera_node')
 
         self.publisher = self.create_publisher(
-            CompressedImage,
-            '/camera/image',
+            Image,
+            '/camera/image_raw',
             10
         )
+
+        self.bridge = CvBridge()
 
         self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -24,7 +28,7 @@ class USBCameraNode(Node):
             self.get_logger().error("Could not open USB camera")
             raise RuntimeError("Camera failed")
 
-        self.timer = self.create_timer(0.033, self.capture_frame)  # ~30 FPS
+        self.timer = self.create_timer(0.033, self.capture_frame)
 
     def capture_frame(self):
         ret, frame = self.cap.read()
@@ -33,17 +37,8 @@ class USBCameraNode(Node):
             self.get_logger().warning("Frame capture failed")
             return
 
-        # Compress frame as JPEG
-        success, encoded_image = cv2.imencode('.jpg', frame)
-
-        if not success:
-            self.get_logger().warning("Image compression failed")
-            return
-
-        msg = CompressedImage()
+        msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         msg.header.stamp = self.get_clock().now().to_msg()
-        msg.format = "jpeg"
-        msg.data = encoded_image.tobytes()
 
         self.publisher.publish(msg)
 
