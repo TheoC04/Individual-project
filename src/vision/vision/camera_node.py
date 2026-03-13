@@ -11,7 +11,7 @@ class USBCameraNode(Node):
 
         self.publisher = self.create_publisher(
             CompressedImage,
-            '/camera/image/compressed',
+            '/camera/image',
             10
         )
 
