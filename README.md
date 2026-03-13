@@ -45,15 +45,36 @@
     ```
 
 ### Running the Project
+
+## vision
+
+Run the camera node using the following command:
+
 ```bash
-Run the project using the following command:
 ros2 run vision camera_node
+```
+
 In another terminal, run the following command to republish the camera feed as compressed images:
 
+```bash
+ros2 run image_transport republish raw compressed --ros-args --remap in:=/camera/image_raw --remap out:=/camera/image/compressed
 ```
-```
-in another terminal, run the following command to view the camera feed:
+
+subscribe to topic out/compressed to view the compressed images. You can use rqt_image_view or any other ROS image viewer to visualize the feed.
+
+In another terminal, run the following command to view the camera feed:
+
+```bash
 ros2 run rqt_image_view rqt_image_view
+```
+This can be on a separate machine on the same network, just make sure to set the ROS_DOMAIN_ID environment variable to match the one used by the camera node.
+
+## remote control
+
+the following command will allow you to control the car using an Xbox controller. Make sure your Xbox controller is connected and properly configured on your system.
+
+```bash
+ros2 run car_control xbox_drive 
 ```
 
 ## Project Description

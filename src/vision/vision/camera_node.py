@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
 import cv2
-from image_transport import ImageTransport
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
