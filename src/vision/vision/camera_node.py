@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
+from sensor_msgs.msg import CompressedImage
 import cv2
 
 
@@ -11,12 +10,11 @@ class USBCameraNode(Node):
         super().__init__('usb_camera_node')
 
         self.publisher = self.create_publisher(
-            Image,
-            '/camera/image_raw',
+            CompressedImage,
+            '/camera/image/compressed',
             10
         )
 
-        self.bridge = CvBridge()
         self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -35,7 +33,18 @@ class USBCameraNode(Node):
             self.get_logger().warning("Frame capture failed")
             return
 
-        msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+        # Compress frame as JPEG
+        success, encoded_image = cv2.imencode('.jpg', frame)
+
+        if not success:
+            self.get_logger().warning("Image compression failed")
+            return
+
+        msg = CompressedImage()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.format = "jpeg"
+        msg.data = encoded_image.tobytes()
+
         self.publisher.publish(msg)
 
     def destroy_node(self):
