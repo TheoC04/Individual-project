@@ -16,7 +16,8 @@
 8. du -h my_bag # check bag size
 9. ros2 topic bw /out/compressedDepth # check topic bandwidth
 10. ros2 topic hz /out/compressedDepth # check topic frequency
-11. 
+11. ros2 run rqt_image_view rqt_image_view --ros-args -p _image_transport:=compressed # view compressed images in rqt_image_view
+
 
 
 
@@ -65,7 +66,7 @@ subscribe to topic out/compressed to view the compressed images. You can use rqt
 In another terminal, run the following command to view the camera feed:
 
 ```bash
-ros2 run rqt_image_view rqt_image_view
+ros2 run rqt_image_view rqt_image_view --ros-args -p _image_transport:=compressed
 ```
 This can be on a separate machine on the same network, just make sure to set the ROS_DOMAIN_ID environment variable to match the one used by the camera node.
 
