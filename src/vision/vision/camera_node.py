@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import cv2
-
+from image_transport import ImageTransport
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
@@ -20,7 +20,7 @@ class USBCameraNode(Node):
         self.bridge = CvBridge()
 
         self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))  # Set YUYV format (from MJPG) for better performance
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
