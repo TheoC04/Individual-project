@@ -14,7 +14,13 @@
 6. ros2 bag play name --loop
 7. scp -r -v theo@theo-desktop.local:~/bags ./  # copy bags from raspberry pi to local machine
 8. du -h my_bag # check bag size
+9. ros2 topic bw /out/compressedDepth # check topic bandwidth
+10. ros2 topic hz /out/compressedDepth # check topic frequency
+11. 
 
+
+
+### Installation Instructions
 
 ### Steps
 1. Clone the repository
@@ -33,10 +39,22 @@
     colcon build
     ```
 
-4. Run the project
+4. Source the setup file
     ```bash
-    [run command]
+    source install/setup.bash
     ```
+
+### Running the Project
+```bash
+Run the project using the following command:
+ros2 run vision camera_node
+In another terminal, run the following command to republish the camera feed as compressed images:
+
+```
+```
+in another terminal, run the following command to view the camera feed:
+ros2 run rqt_image_view rqt_image_view
+```
 
 ## Project Description
 [Add a brief description of what this project does]
