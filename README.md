@@ -58,7 +58,7 @@ ros2 run vision camera_node
 In another terminal, run the following command to republish the camera feed as compressed images:
 
 ```bash
-ros2 run image_transport republish raw compressed --ros-args --remap in:=/camera/image_raw --remap out:=/camera/image/compressed
+ros2 run image_transport republish raw compressed --ros-args --remap in:=/camera/image_raw --remap out/compressed:=/camera/image_raw/compressed
 ```
 
 subscribe to topic out/compressed to view the compressed images. You can use rqt_image_view or any other ROS image viewer to visualize the feed.

@@ -16,7 +16,7 @@ class LineFollower(Node):
         # Subscribe to compressed camera images
         self.sub = self.create_subscription(
             CompressedImage,
-            '/out/compressed',
+            '/camera/image_raw/compressed',
             self.image_callback,
             10
         )
@@ -31,7 +31,7 @@ class LineFollower(Node):
         # Processed image publisher
         self.debug_pub = self.create_publisher(
             CompressedImage,
-            '/line_follower/mask',
+            '/line_follower/image/compressed', #needs /compressed at the end so it uses that plugin to publish
             10
         )
 
@@ -57,7 +57,7 @@ class LineFollower(Node):
 
         # Region of interest (bottom part)
         h, w = mask.shape
-        roi = mask[int(h * 0.7):h, :]
+        roi = mask[int(h * 0.4):h, :]
 
         # Create empty mask image
         clean = np.zeros_like(mask)
@@ -90,6 +90,7 @@ class LineFollower(Node):
         success, encoded = cv2.imencode('.jpg', clean)
 
         if success:
+            self.get_logger().info(f"Publishing processed image")
             out = CompressedImage()
             out.header = msg.header
             out.format = "jpeg"
