@@ -49,11 +49,15 @@ class LineFollower(Node):
         # Resize (faster processing)
         frame = cv2.resize(frame, (320, 240))
 
-        # Convert to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Convert BGR to HSV
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Threshold (detect dark line)
-        _, mask = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
+        # Define yellow range in HSV
+        lower_yellow = np.array([20, 100, 100])   # H:20, S:100, V:100
+        upper_yellow = np.array([30, 255, 255])   # H:30, S:255, V:255
+
+        # Create a mask for yellow color
+        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
 
         # Region of interest (bottom part)
         h, w = mask.shape
