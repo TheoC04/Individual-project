@@ -3,7 +3,7 @@ node_modules/
 __pycache__/
 *.pyc
 .venv/
-venv/
+venv/*
 
 # IDE
 .vscode/
@@ -31,6 +31,8 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+.env.local
+lanedet_env/
 
 # Ros bags
 bags/   
