@@ -65,7 +65,7 @@ class LineFollower(Node):
 
         # Create empty mask image
         clean = np.zeros_like(mask)
-        clean[int(h*0.1):h, :] = roi
+        clean[int(h*0.4):h, :] = roi
 
         # Find centroid
         M = cv2.moments(roi)
