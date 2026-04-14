@@ -194,6 +194,7 @@ while True:
     print(f"Speed: {speed:.2f}, Reverse: {reverse:.2f}, Steering: {steering:.2f}")
 
     total_speed = abs(speed - reverse) # 
+    total_speed = total_speed * 0.2 # scale down max speed if needed
     if drive_enabled:
         set_motors(total_speed, 1 if speed > reverse else -1)
     elif not drive_enabled:
