@@ -53,15 +53,15 @@ class LineFollower(Node):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define yellow range in HSV
-        lower_yellow = np.array([20, 100, 100])   # H:20, S:100, V:100
-        upper_yellow = np.array([30, 255, 255])   # H:30, S:255, V:255
+        lower_yellow = np.array([30, 70, 50])   # H:20, S:100, V:100
+        upper_yellow = np.array([90, 255, 255])   # H:30, S:255, V:255
 
         # Create a mask for yellow color
         mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
 
         # Region of interest (bottom part)
         h, w = mask.shape
-        roi = mask[int(h * 0.4):h, :]
+        roi = mask[int(h*0.1):h, :]
 
         # Create empty mask image
         clean = np.zeros_like(mask)

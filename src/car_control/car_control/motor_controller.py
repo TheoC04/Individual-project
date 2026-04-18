@@ -5,6 +5,7 @@ import pigpio
 import rclpy
 from rclpy.node import Node
 from chassis_control.msg import SetVelocity
+import lgpio
 
 # -------------------
 # CONFIG
@@ -12,7 +13,18 @@ from chassis_control.msg import SetVelocity
 MAX_SPEED = 80
 STEER_CENTER = 1500
 STEER_RANGE = 500
-GPIO_PIN = 12
+GPIO_PIN = 17  # BCM pin number for steering servo 
+
+
+'''def get_gpiochip():
+    for chip in range(0, 10):
+        try:
+            h = lgpio.gpiochip_open(chip)
+            lgpio.gpiochip_close(h)
+            return chip
+        except:
+            pass
+    raise RuntimeError("No usable gpiochip found")'''
 
 
 class XboxDriveNode(Node):
@@ -26,16 +38,9 @@ class XboxDriveNode(Node):
             '/chassis_control/set_velocity',
             10
         )
-
-        # Setup pigpio
-        '''
-        self.pi = pigpio.pi()
-        if not self.pi.connected:
-            self.get_logger().error("pigpio not running! Run: sudo pigpiod")
-            sys.exit()
-
-        self.pi.set_servo_pulsewidth(GPIO_PIN, STEER_CENTER)
-        '''
+        
+        self.get_logger().info("pigpio initialized and servo centered")
+        self.get_logger().info("Initializing Xbox controller...")
 
         # Setup pygame joystick
         pygame.init()
@@ -52,6 +57,8 @@ class XboxDriveNode(Node):
 
         # Create timer (30 Hz loop)
         self.timer = self.create_timer(0.033, self.control_loop)
+    
+    
 
     def control_loop(self):
 
@@ -67,31 +74,46 @@ class XboxDriveNode(Node):
         # Final speed
         speed = int((forward - backward) * MAX_SPEED)
 
-        # Right stick horizontal → steering
+        # ---------------- Steering ----------------
+
         steer_axis = self.joystick.get_axis(2)
 
-        steer_pulse = int(STEER_CENTER + steer_axis * STEER_RANGE)
+        # Deadzone for steering (prevents jitter)
+        if abs(steer_axis) < 0.05:
+            steer_axis = 0.0
 
-        steer_pulse = max(
-            STEER_CENTER - STEER_RANGE,
-            min(STEER_CENTER + STEER_RANGE, steer_pulse)
-        )
+        # Convert axis (-1 to 1) → pulse width
+        steer_pulse = STEER_CENTER + (steer_axis * STEER_RANGE)
 
+        # HARD clamp to valid servo range (important for lgpio)
+        steer_pulse = max(1000, min(2000, steer_pulse))
+        steer_pulse = int(steer_pulse)
+
+        self.get_logger().info(f"Speed: {speed} | Steering: {steer_pulse}")
+
+        # Get encoder speeds (placeholder values - replace with actual encoder reads)
+        left_encoder = 0  # Replace with actual left encoder reading
+        right_encoder = 0  # Replace with actual right encoder reading
+
+        # Synchronize motor speeds based on encoder feedback
+        left_speed, right_speed = self.sync_motor_speeds(speed, speed, left_encoder, right_encoder)
+        
         # Publish message
         msg = SetVelocity()
-        msg.speed = speed
-        msg.steering_angle = steer_pulse
+        msg.speed = int(speed)
+        msg.steering_angle = int(steer_pulse)
         msg.rotation = 0
-
         self.publisher_.publish(msg)
         print(f"Published: speed={speed}, steer_pulse={steer_pulse}")
 
         # Move servo
-        # self.pi.set_servo_pulsewidth(GPIO_PIN, steer_pulse)
+        print("trying to send servo pulse:", steer_pulse)
+        #lgpio.tx_servo(self.h, 17, steer_pulse) # Use the correct pin number here (17 for BCM)
+        print("servo sent:", steer_pulse)
+        
 
-        self.get_logger().info(
-            f"Speed: {speed} | Steering: {steer_pulse}"
-        )
+
+        
 
     def destroy_node(self):
         # Stop safely
@@ -101,8 +123,12 @@ class XboxDriveNode(Node):
         stop_msg.rotate = 0
 
         self.publisher_.publish(stop_msg)
-        #self.pi.set_servo_pulsewidth(GPIO_PIN, STEER_CENTER)
-        self.pi.stop()
+
+        #lgpio.tx_pwm(self.h, GPIO_PIN, 50, int((STEER_CENTER / 20000) * 1000000))  # Center steering
+        #lgpio.gpiochip_close(self.h)
+
+        #self.servo.ChangeDutyCycle(STEER_CENTER / 1000 * 50)  # Center steering
+        #GPIO.cleanup()
         pygame.quit()
 
         super().destroy_node()
