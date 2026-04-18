@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'lane_follower_node = lane_following.lane_follower_node:main',
+            'ultra_fast_lane_node = lane_following.ultra_fast_lane_node:main',
         ],
     },
 )

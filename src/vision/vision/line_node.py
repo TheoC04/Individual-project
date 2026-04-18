@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -73,7 +74,6 @@ class LineDetector:
         return masked
     
     def detect_curve(self, image):
-        # Placeholder for curve detection logic
         # This could involve fitting a polynomial to the detected line points
         # and calculating curvature based on the fitted curve.
 
@@ -226,6 +226,7 @@ class LineDetector:
         return curve_output_img
 
     def birds_eye_view(self, frame):
+
         h, w = frame.shape[:2]
 
         # Define source points (trapezoid)
@@ -251,6 +252,218 @@ class LineDetector:
         warped = cv2.warpPerspective(frame, M, (w, h))
 
         return warped
+    
+    def highlight_white(self, image):
+        """
+        Highlight white regions in the image.
+        Returns:
+            mask: binary mask of white areas
+            output: image with white highlighted
+        """
+
+        # Convert to HSV (better for color filtering)
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # Define white range
+        lower_white = np.array([0, 0, 200])
+        upper_white = np.array([180, 40, 255])
+
+        # Create mask
+        mask = cv2.inRange(hsv, lower_white, upper_white)
+
+        # Clean noise
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+        # Create highlighted output
+        output = image.copy()
+        output[mask > 0] = [0, 255, 0]  # highlight white as green
+
+        return mask, output
+    
+    def get_road_edges_from_white(self, mask):
+        h, w = mask.shape
+        left_pts = []
+        right_pts = []
+        center_pts = []
+
+        prev_center = None  # for temporal jump filtering
+
+        edge_threshold = 10
+        min_road_width = 0
+        max_road_width = 30
+
+        for y in range(int(h * 0.9), int(h * 0.5), -5):
+
+            xs = np.where(mask[y] > 0)[0]
+            if len(xs) == 0:
+                continue
+
+            # Identify contiguous white segments
+            segments = np.split(xs, np.where(np.diff(xs) != 1)[0] + 1)
+
+            # remove tiny noisy segments
+            #segments = [s for s in segments if len(s) > 20]
+            #if len(segments) < 2:
+            #   continue
+
+            left_white = segments[0]
+            right_white = segments[-1]
+
+            margin = 2
+            left_edge = min(left_white[-1] + margin, w - 1)
+            right_edge = max(right_white[0] - margin, 0)
+
+            # 🚫 1. ignore edge-touching detections
+            #if left_edge <= edge_threshold or right_edge >= (w - 1 - edge_threshold):
+            #    continue
+
+            road_width = right_edge - left_edge
+
+            # 🚫 2. reject unrealistic widths
+            #if road_width < min_road_width or road_width > max_road_width:
+             #   continue
+
+            center_x = (left_edge + right_edge) // 2
+
+            # 🚫 3. temporal jump filtering (stability)
+            if prev_center is not None:
+                if abs(center_x - prev_center) > 50:
+                    continue
+
+            prev_center = center_x
+
+            left_pts.append((left_edge, y))
+            right_pts.append((right_edge, y))
+            center_pts.append((center_x, y))
+
+        return left_pts, right_pts, center_pts
+    
+    def draw_road_boundaries(self, image, left_pts, right_pts, center_pts=None):
+        """
+        Draw detected left and right road boundaries on the image.
+        
+        Args:
+            image (np.array): Original BGR image
+            left_pts (list of (x, y)): Points along the left road edge
+            right_pts (list of (x, y)): Points along the right road edge
+            center_pts (list of (x, y)): Points along the center road edge
+
+        Returns:
+            np.array: Copy of the image with boundaries drawn
+        """
+        out = image.copy()
+
+        # Draw left edge in red
+        for x, y in left_pts:
+            cv2.circle(out, (x, y), 3, (0, 0, 255), -1)  # BGR: Red
+
+        # Draw right edge in blue
+        for x, y in right_pts:
+            cv2.circle(out, (x, y), 3, (255, 0, 0), -1)  # BGR: Blue
+        # Optionally, draw center line in green
+        if center_pts is not None:
+            for x, y in center_pts:
+                cv2.circle(out, (x, y), 3, (255, 0, 255), -1)  # draw center points in magenta for visibility (BGR: Magenta)
+
+        # Optionally, connect points with lines for clearer boundary visualization
+        if len(left_pts) > 1:
+            for i in range(1, len(left_pts)):
+                cv2.line(out, left_pts[i-1], left_pts[i], (0, 0, 255), 2)
+        if len(right_pts) > 1:
+            for i in range(1, len(right_pts)):
+                cv2.line(out, right_pts[i-1], right_pts[i], (255, 0, 0), 2)
+        if center_pts is not None and len(center_pts) > 1:
+            for i in range(1, len(center_pts)):
+                cv2.line(out, center_pts[i-1], center_pts[i], (255, 0, 255), 2) # connect center points with magenta line
+
+        return out
+    
+def method_1(self, frame):
+        detector = LineDetector(frame)
+
+        roi_frame = detector.apply_roi(frame) #original ROI method
+        roi_frame, roi_mask = detector.roi_from_black(roi_frame) #alternative ROI method
+
+        # Run detection on ROI frame 
+        #edges = detector.preprocess()
+        #lines = detector.detect_lines(edges)
+        #output = detector.draw_lines(lines) #also draws lines on output
+
+        curve, curve_output = detector.detect_curve(roi_frame) #also draws curve points on output
+        
+        # Publish target point for pure pursuit
+        target_point = detector.select_target_point(curve, frame)
+        if target_point is not None:
+            point_msg = geometry_msgs.msg.Point()
+            point_msg.x = float(target_point[0])
+            point_msg.y = float(target_point[1])
+            point_msg.z = 0.0
+            self.point_publisher.publish(point_msg)
+        else:
+            self.get_logger().debug("No valid target point detected, skipping point publish.")
+
+        # Highlight white regions
+        mask, white_highlight_image = detector.highlight_white(frame)
+        left_pts, right_pts, center_pts = detector.get_road_edges_from_white(mask)
+
+        # Draw road boundaries
+        boundary_image = detector.draw_road_boundaries(
+            white_highlight_image,
+            left_pts,
+            right_pts,
+            center_pts
+        )
+
+        # Draw target point ON TOP of same image
+        boundary_image = detector.draw_target_on_curve(
+            boundary_image,
+            target_point
+        )
+
+        # Publish combined result
+        out_msg = self.bridge.cv2_to_imgmsg(boundary_image, encoding='bgr8')
+        self.image_publisher.publish(out_msg)  
+
+
+def method_2(self, frame):
+        detector = LineDetector(frame)
+
+        roi_frame = detector.apply_roi(frame) #original ROI method
+        #roi_frame, roi_mask = detector.roi_from_black(roi_frame) #alternative ROI method
+
+        # Run detection on ROI frame 
+        #edges = detector.preprocess()
+        #lines = detector.detect_lines(edges)
+        #output = detector.draw_lines(lines) #also draws lines on output
+
+        curve, curve_output = detector.detect_curve(roi_frame) #also draws curve points on output
+        
+        # Publish target point for pure pursuit
+        target_point = detector.select_target_point(curve, frame)
+        if target_point is not None:
+            point_msg = geometry_msgs.msg.Point()
+            point_msg.x = float(target_point[0])
+            point_msg.y = float(target_point[1])
+            point_msg.z = 0.0
+            self.point_publisher.publish(point_msg)
+        else:
+            self.get_logger().debug("No valid target point detected, skipping point publish.")
+
+        # Draw target point 
+        curve_output = detector.draw_target_on_curve(
+            curve_output,
+            target_point
+        )
+
+        # Publish combined result
+        out_msg = self.bridge.cv2_to_imgmsg(curve_output, encoding='bgr8')
+        self.image_publisher.publish(out_msg)  
+
+def method_3(self, frame):
+        # This method can be used to test a different ROI approach, such as using color-based segmentation to isolate the lane area instead of a fixed trapezoidal mask. You can implement it similarly to method_1 but with a different ROI logic, and then switch between them for testing.
+        pass
+
 
 class LineDetectionNode(Node):
 
@@ -260,8 +473,8 @@ class LineDetectionNode(Node):
         self.bridge = CvBridge()
 
         self.subscription = self.create_subscription(
-            Image,
-            '/camera/image_raw',
+            CompressedImage,
+            '/camera/image_raw/compressed',
             self.image_callback,
             10
         )
@@ -283,35 +496,12 @@ class LineDetectionNode(Node):
     def image_callback(self, msg):
 
         # Convert ROS image → OpenCV
-        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        self.get_logger().debug("Received image frame, converting to OpenCV format.")
+        np_arr = np.frombuffer(msg.data, np.uint8)
+        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)        
+        self.get_logger().debug("Received image frame for processing.")
 
-        detector = LineDetector(frame)
-        roi_frame = detector.apply_roi(frame) #original ROI method
-        #roi_frame, roi_mask = detector.roi_from_black(roi_frame) #alternative ROI method
-
-        # Run detection
-        edges = detector.preprocess()
-        lines = detector.detect_lines(edges)
-        output = detector.draw_lines(lines) #also draws lines on output
-
-        curve, curve_output = detector.detect_curve(roi_frame) #also draws curve points on output
-        
-        # Publish target point for pure pursuit
-        target_point = detector.select_target_point(curve, frame)
-        if target_point is not None:
-            point_msg = geometry_msgs.msg.Point()
-            point_msg.x = float(target_point[0])
-            point_msg.y = float(target_point[1])
-            point_msg.z = 0.0
-            self.point_publisher.publish(point_msg)   
-
-        # Draw target point on curve output for visualization
-        curve_output = detector.draw_target_on_curve(curve_output, target_point)
-
-        # Convert back to ROS message
-        out_msg = self.bridge.cv2_to_imgmsg(curve_output, encoding='bgr8')
-        self.image_publisher.publish(out_msg)
-        
+        method_2(self, frame)
         
 
 

@@ -8,12 +8,17 @@ def init():
     gpio.setup(23, gpio.OUT)
     gpio.setup(24, gpio.OUT)
 
+    gpio.setup(25, gpio.OUT)
+    servo = gpio.PWM(25, 50)  # 50 Hz for servo
+    servo.start(7.5)  # neutral position
+
 def forward(sec):
     init()
     gpio.output(17, False)
     gpio.output(22, True)
     gpio.output(23, True)
     gpio.output(24, False)
+    gpio.output(25, True)
     time.sleep(sec)
     gpio.cleanup() 
 
@@ -23,6 +28,7 @@ def reverse(sec):
     gpio.output(22, False)
     gpio.output(23, False)
     gpio.output(24, True)
+    gpio.output(25, True)
     time.sleep(sec)
     gpio.cleanup()
 
@@ -32,17 +38,21 @@ def left_turn(sec):
     gpio.output(22, False)
     gpio.output(23, True)
     gpio.output(24, False)
+    gpio.output(25, True)
     time.sleep(sec)
     gpio.cleanup()
-    
+
 def right_turn(sec):
     init()
     gpio.output(17, False)
     gpio.output(22, True)
     gpio.output(23, False)
     gpio.output(24, True)
-    time.sleep(sec)
     gpio.cleanup()
+
+def set_angle(duty):
+    servo.ChangeDutyCycle(duty)
+    time.sleep(0.3)
 
 seconds = 3
 time.sleep(seconds)
