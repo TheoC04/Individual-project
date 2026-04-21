@@ -27,6 +27,8 @@ setup(
             'xbox_drive = car_control.motor_controller:main', # make name consistant with node name
             'xbox_test = car_control.xbox_test:main',
             'motor_driver = car_control.motor_driver_node:main',
+            'target_point_controller = car_control.target_point_control:main',
+            'motor_driver_copy = car_control.motor_driver_node_copy:main',
         ],
     },
 )

@@ -10,7 +10,7 @@ MOTOR_TYPE_ADDR = 0x14
 MOTOR_ENCODER_POLARITY_ADDR = 0x15
 MOTOR_FIXED_SPEED_ADDR = 0x33
 
-class MotorDriverNode(Node):
+class MotorDriverNodeCopy(Node):
 
     def __init__(self):
         super().__init__('motor_driver_node')
@@ -40,6 +40,7 @@ class MotorDriverNode(Node):
 
         # 4 motors same speed
         motor_speeds = [speed, -speed, speed, -speed]
+        self.get_logger().info(f"Speeds: {motor_speeds}")
 
         try:
             self.bus.write_i2c_block_data(
@@ -67,7 +68,7 @@ class MotorDriverNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = MotorDriverNode()
+    node = MotorDriverNodeCopy()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

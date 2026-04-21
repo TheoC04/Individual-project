@@ -1,12 +1,8 @@
-import sys
-import time
-import geometry_msgs
-import pygame
-import pigpio
+
 import rclpy
 from rclpy.node import Node
 from chassis_control.msg import SetVelocity
-import lgpio
+from geometry_msgs.msg import Point
 
 # -------------------
 # CONFIG
@@ -41,7 +37,7 @@ class TargetPointControlNode(Node):
         )
 
         self.subscription = self.create_subscription(
-            geometry_msgs.msg.Point,
+            Point,
             '/vision/target_point',
             self.target_point_callback,
             10
@@ -49,9 +45,15 @@ class TargetPointControlNode(Node):
         
         # Create timer (30 Hz loop)
         self.timer = self.create_timer(0.033, self.control_loop)
+
+        self.image_width = 640  # Assuming a 640px wide image from vision
+        self.max_speed = MAX_SPEED
+        self.min_speed = 20  # Minimum speed to ensure movement 
+        self.kp_turn = 0.5  # Proportional gain for turning control
+
     
     def target_point_callback(self, msg):
-        self.get_logger().debug(f"Received target point: ({msg.x}, {msg.y})")
+        self.get_logger().info(f"Received target point: ({msg.x}, {msg.y})")
         self.target_x = msg.x
         self.target_y = msg.y
 
@@ -82,17 +84,17 @@ class TargetPointControlNode(Node):
         cmd_msg = SetVelocity()
         cmd_msg.speed = int(speed)
         cmd_msg.steering_angle = int(STEER_CENTER + turn * STEER_RANGE)
-        cmd_msg.rotate = 0
+        cmd_msg.rotation = 0
         self.publisher_.publish(cmd_msg)
-        self.get_logger().debug(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")        
+        self.get_logger().info(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")        
         
 
     def destroy_node(self):
         # Stop safely
         stop_msg = SetVelocity()
         stop_msg.speed = 0
-        stop_msg.angle = 90
-        stop_msg.rotate = 0
+        stop_msg.steering_angle = 90
+        stop_msg.rotation = 0
 
         self.publisher_.publish(stop_msg)
 

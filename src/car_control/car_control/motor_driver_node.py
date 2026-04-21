@@ -19,15 +19,16 @@ class MotorDriverNode(Node):
     def __init__(self):
         super().__init__('motor_driver_node')
 
-        self.kp_diff = 0.02   # proportional gain (tune this)
+        self.Kp_diff = 0.02   # proportional gain (tune this)
         self.Kp_speed = 0.1   # proportional gain for speed control (tune this)
-        self.ki_speed = 0.01  # integral gain for speed control (tune this)
+        self.Ki_speed = 0.01  # integral gain for speed control (tune this)
         self.speed_error_sum = 0   # integral term accumulator for speed control
         self.speed = 0
         self.image_width = 640
         self.max_speed = 80
         self.min_speed = -80
         self.kp_turn = 0.1
+        self.dt = 0.1  # time step for integral calculation
 
         self.prev_encoder = [0, 0, 0, 0]
         self.prev_time = time.time()
@@ -113,9 +114,9 @@ class MotorDriverNode(Node):
         left = speeds[0]
         right = speeds[2]
 
-        error = left - right
+        error = left + right
         # proportional correction  (for same speed)
-        correction = self.kp_diff * error 
+        correction = self.Kp_diff * error 
 
         avg = (left + right) / 2
         speed_error = self.speed - avg
@@ -123,7 +124,7 @@ class MotorDriverNode(Node):
         self.speed_error_sum = max(min(self.speed_error_sum, 1000), -1000)  # anti-windup for integral term
         
         base = (
-            self.Kp_speed * speed_error +
+            self.Kp_speed * speed_error  +
             self.Ki_speed * self.speed_error_sum
         )
 
@@ -146,7 +147,7 @@ class MotorDriverNode(Node):
             self.get_logger().error(f"I2C Write Failed: {e}")
 
         if self.speed is not None:
-            self.get_logger().info(f"Speed: {self.speed:.2f} | Error: {error:.2f} | Correction: {correction:.2f} | Left Cmd: {left_cmd:.2f} | Right Cmd: {right_cmd:.2f}")
+            self.get_logger().info(f"Target Speed: {self.speed:.2f} | speed: {avg:.2f}  | motor Error: {error:.2f} | Correction: {correction:.2f} | Left Cmd: {left_cmd:.2f} | Right Cmd: {right_cmd:.2f}")
         else:
             self.get_logger().info("Failed to read encoder speed")
         
