@@ -379,11 +379,12 @@ class LineDetector:
 
         return out
     
-def method_1(self, frame):
+def method_1(self, frame, header):
         detector = LineDetector(frame)
 
         roi_frame = detector.apply_roi(frame) #original ROI method
         roi_frame, roi_mask = detector.roi_from_black(roi_frame) #alternative ROI method
+
 
         # Run detection on ROI frame 
         #edges = detector.preprocess()
@@ -423,10 +424,11 @@ def method_1(self, frame):
 
         # Publish combined result
         out_msg = self.bridge.cv2_to_imgmsg(boundary_image, encoding='bgr8')
+        out_msg.header = header  # preserve original timestamp and frame_id
         self.image_publisher.publish(out_msg)  
 
 
-def method_2(self, frame):
+def method_2(self, frame, header):
         detector = LineDetector(frame)
 
         roi_frame = detector.apply_roi(frame) #original ROI method
@@ -458,9 +460,10 @@ def method_2(self, frame):
 
         # Publish combined result
         out_msg = self.bridge.cv2_to_imgmsg(curve_output, encoding='bgr8')
+        out_msg.header = header  # preserve original timestamp and frame_id
         self.image_publisher.publish(out_msg)  
 
-def method_3(self, frame):
+def method_3(self, frame, header):
         # This method can be used to test a different ROI approach, such as using color-based segmentation to isolate the lane area instead of a fixed trapezoidal mask. You can implement it similarly to method_1 but with a different ROI logic, and then switch between them for testing.
         pass
 
@@ -501,7 +504,8 @@ class LineDetectionNode(Node):
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)        
         self.get_logger().debug("Received image frame for processing.")
 
-        method_2(self, frame)
+        #method_2(self, frame, msg.header)
+        method_1(self, frame, msg.header)
         
 
 

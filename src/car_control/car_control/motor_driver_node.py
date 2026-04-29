@@ -32,7 +32,7 @@ class MotorDriverNode(Node):
 
         self.prev_encoder = [0, 0, 0, 0]
         self.prev_time = time.time()
-        self.timer = self.create_timer(0.1, self.encoder_loop)
+        self.timer = self.create_timer(0.1, self.control_loop)
 
         self.subscription = self.create_subscription(
             SetVelocity,
@@ -108,7 +108,7 @@ class MotorDriverNode(Node):
             self.get_logger().error(f"Encoder read failed: {e}")
             return [0, 0, 0, 0]
 
-    def encoder_loop(self):
+    def control_loop(self):
         speeds = self.read_motor_speeds()
 
         left = speeds[0]

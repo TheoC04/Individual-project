@@ -13,6 +13,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
+        ('share/vision/models', ['models/traffic_sign_detector.pt']),
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', 'vision', 'launch'), glob('launch/*.launch.py')),
     ],
@@ -31,6 +32,7 @@ setup(
         'console_scripts': [
             'camera_node = vision.camera_node:main',
             'line_node = vision.line_node:main',
+            'sign_node = vision.sign_detection:main',
         ],
     },
 )

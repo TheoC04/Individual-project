@@ -123,12 +123,6 @@ class XboxDriveNode(Node):
         stop_msg.rotate = 0
 
         self.publisher_.publish(stop_msg)
-
-        #lgpio.tx_pwm(self.h, GPIO_PIN, 50, int((STEER_CENTER / 20000) * 1000000))  # Center steering
-        #lgpio.gpiochip_close(self.h)
-
-        #self.servo.ChangeDutyCycle(STEER_CENTER / 1000 * 50)  # Center steering
-        #GPIO.cleanup()
         pygame.quit()
 
         super().destroy_node()
