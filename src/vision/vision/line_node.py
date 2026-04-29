@@ -479,7 +479,7 @@ class LineDetectionNode(Node):
             CompressedImage,
             '/camera/image_raw/compressed',
             self.image_callback,
-            1
+            10
         )
 
         self.image_publisher = self.create_publisher(
