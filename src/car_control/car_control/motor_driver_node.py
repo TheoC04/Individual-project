@@ -133,6 +133,7 @@ class MotorDriverNode(Node):
 
         if self.speed_limit is not None:
             target_speed = min(self.speed, self.speed_limit)
+            self.get_logger().info(f"Applying speed limit: {self.speed_limit:.2f} | Target Speed: {target_speed:.2f}")
         else:
             target_speed = self.speed
 
@@ -166,8 +167,8 @@ class MotorDriverNode(Node):
         except Exception as e:
             self.get_logger().error(f"I2C Write Failed: {e}")
 
-        if self.speed is not None:
-            self.get_logger().info(f"Target Speed: {self.speed:.2f} | speed: {avg:.2f}  | motor Error: {error:.2f} | Correction: {correction:.2f} | Left Cmd: {left_cmd:.2f} | Right Cmd: {right_cmd:.2f}")
+        if target_speed is not None:
+            self.get_logger().info(f"Target Speed: {target_speed:.2f} | speed: {avg:.2f}  | motor Error: {error:.2f} | Correction: {correction:.2f} | Left Cmd: {left_cmd:.2f} | Right Cmd: {right_cmd:.2f}")
         else:
             self.get_logger().info("Failed to read encoder speed")
         
