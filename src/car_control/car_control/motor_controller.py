@@ -4,7 +4,7 @@ import pygame
 import pigpio
 import rclpy
 from rclpy.node import Node
-from chassis_control.msg import SetVelocity
+from messages.msg import SetVelocity
 import lgpio
 
 # -------------------

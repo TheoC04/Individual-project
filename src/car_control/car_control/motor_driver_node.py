@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from chassis_control.msg import SetVelocity
+from messages.msg import SetVelocity, Float32Stamped
 from smbus2 import SMBus
 import time
 import lgpio
@@ -24,6 +24,7 @@ class MotorDriverNode(Node):
         self.Ki_speed = 0.01  # integral gain for speed control (tune this)
         self.speed_error_sum = 0   # integral term accumulator for speed control
         self.speed = 0
+        self.speed_limit = 80  # default speed limit (0-100 scale)
         self.image_width = 640
         self.max_speed = 80
         self.min_speed = -80
@@ -40,6 +41,15 @@ class MotorDriverNode(Node):
             self.callback,
             10
         )
+
+        self.subscription  = self.create_subscription(
+            Float32Stamped,
+            '/speed_limit',
+            self.speed_limit_callback,
+            10
+        )
+
+
 
         self.bus = SMBus(1)
 
@@ -73,6 +83,9 @@ class MotorDriverNode(Node):
         self.get_logger().debug(f"Published: speed={self.speed}, steer_pulse={steer_pulse}")
         self.get_logger().debug("subscribed data: speed=%d, steering_angle=%.2f" % (msg.speed, msg.steering_angle))
 
+    def speed_limit_callback(self, msg):
+        self.get_logger().info(f"Received speed limit: {msg.data:.2f}")
+        self.speed_limit = msg.data * 100  # Convert from 0-1 to 0-100 scale
 
     def read_motor_speeds(self):
         try:
@@ -118,8 +131,13 @@ class MotorDriverNode(Node):
         # proportional correction  (for same speed)
         correction = self.Kp_diff * error 
 
+        if self.speed_limit is not None:
+            target_speed = min(self.speed, self.speed_limit)
+        else:
+            target_speed = self.speed
+
         avg = (left + right) / 2
-        speed_error = self.speed - avg
+        speed_error = target_speed - avg
         self.speed_error_sum += speed_error * self.dt  # accumulate integral error
         self.speed_error_sum = max(min(self.speed_error_sum, 1000), -1000)  # anti-windup for integral term
         
@@ -132,6 +150,8 @@ class MotorDriverNode(Node):
         left_cmd  = base - correction
         right_cmd = base - correction # invert right motor
         right_cmd = -right_cmd
+
+
 
         motor_speeds = [int(left_cmd), int(left_cmd), int(right_cmd), int(right_cmd)]
 

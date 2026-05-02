@@ -1,7 +1,7 @@
 
 import rclpy
 from rclpy.node import Node
-from chassis_control.msg import SetVelocity
+from messages.msg import SetVelocity
 from geometry_msgs.msg import Point
 
 # -------------------

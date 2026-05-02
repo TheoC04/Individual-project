@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'xbox_drive = car_control.motor_controller:main', # make name consistant with node name
+            'Sign_control_node = car_control.Sign_control_node:main',
             'xbox_test = car_control.xbox_test:main',
             'motor_driver = car_control.motor_driver_node:main',
             'target_point_controller = car_control.target_point_control:main',
