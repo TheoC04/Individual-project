@@ -34,6 +34,10 @@ class MotorDriverNode(Node):
         self.prev_encoder = [0, 0, 0, 0]
         self.prev_time = time.time()
         self.timer = self.create_timer(0.1, self.control_loop)
+        
+        self.steering_angle = 1500  # Initialize steering angle
+        self.last_steering_angle = 1500  # Track last sent servo value
+        self.steering_deadband = 10  # Ignore changes smaller than this
 
         self.subscription = self.create_subscription(
             SetVelocity,
@@ -73,14 +77,12 @@ class MotorDriverNode(Node):
 
         self.speed = int(max(-100, min(100, msg.speed)))
 
-        # Calculate steering pulse
+        # Store steering angle for control loop to handle
         steer_pulse = msg.steering_angle
         steer_pulse = max(1000, min(2000, steer_pulse))  # Constrain to valid range
-        steer_pulse = int(steer_pulse)
-
-        #print("trying to send servo pulse:", steer_pulse)
-        lgpio.tx_servo(self.h, self.pin, steer_pulse) # Use the correct pin number here (17 for BCM) 
-        self.get_logger().debug(f"Published: speed={self.speed}, steer_pulse={steer_pulse}")
+        self.steering_angle = int(steer_pulse)
+        
+        self.get_logger().debug(f"Received: speed={self.speed}, steer_pulse={self.steering_angle}")
         self.get_logger().debug("subscribed data: speed=%d, steering_angle=%.2f" % (msg.speed, msg.steering_angle))
 
     def speed_limit_callback(self, msg):
@@ -122,6 +124,11 @@ class MotorDriverNode(Node):
             return [0, 0, 0, 0]
 
     def control_loop(self):
+        # Update servo only if steering angle changed significantly
+        if abs(self.steering_angle - self.last_steering_angle) > self.steering_deadband:
+            lgpio.tx_servo(self.h, self.pin, self.steering_angle)
+            self.last_steering_angle = self.steering_angle
+        
         speeds = self.read_motor_speeds()
 
         left = speeds[0]
