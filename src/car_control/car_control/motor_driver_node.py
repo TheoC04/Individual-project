@@ -69,7 +69,7 @@ class MotorDriverNode(Node):
         self.h = lgpio.gpiochip_open(4) # Find the correct gpiochip (usually 4)
         self.pin = 17  # BCM pin number for steering servo
         lgpio.gpio_claim_output(self.h, self.pin) # Claim the pin for output
-        lgpio.tx_servo(self.h, self.pin, 1500) # Center the servo
+        #lgpio.tx_servo(self.h, self.pin, 1500) # Center the servo
         time.sleep(2)
 
         self.get_logger().info("Motor board initialized")
@@ -87,7 +87,7 @@ class MotorDriverNode(Node):
         self.steering_angle = int(
             alpha * steer_pulse + (1 - alpha) * self.steering_angle
         )
-        
+
         self.get_logger().debug(f"Received: speed={self.speed}, steer_pulse={self.steering_angle}")
         self.get_logger().debug("subscribed data: speed=%d, steering_angle=%.2f" % (msg.speed, msg.steering_angle))
 
@@ -133,7 +133,7 @@ class MotorDriverNode(Node):
         # Update servo only if steering angle changed significantly
         if abs(self.steering_angle - self.last_steering_angle) > self.steering_deadband:
             self.get_logger().info(f"Updating steering angle: {self.steering_angle}" f"(last: {self.last_steering_angle})" f" (difference: {abs(self.steering_angle - self.last_steering_angle)})" )
-            lgpio.tx_servo(self.h, self.pin, self.steering_angle)
+            #lgpio.tx_servo(self.h, self.pin, self.steering_angle)
             self.last_steering_angle = self.steering_angle
         
         speeds = self.read_motor_speeds()
