@@ -19,7 +19,9 @@ class MotorDriverNode(Node):
     def __init__(self):
         super().__init__('motor_driver_node')
 
-        self.Kp_diff = 0.02   # proportional gain (tune this)
+        self.speed_modifier = 1.0  # Scale factor for speed commands
+
+        self.Kp_diff = 0.1   # proportional gain (tune this)
 
         self.Kp_speed = 0.01   # proportional gain for speed control (tune this)
         self.Ki_speed = 0.01  # integral gain for speed control (tune this)
@@ -146,10 +148,11 @@ class MotorDriverNode(Node):
         correction = self.Kp_diff * error 
 
         if self.speed_limit is not None:
-            target_speed = min(self.speed, self.speed_limit)
+            target_speed = min(self.speed, self.speed_limit) * self.speed_modifier
             self.get_logger().info(f"Applying speed limit: {self.speed_limit:.2f} | Target Speed: {target_speed:.2f}")
         else:
-            target_speed = self.speed
+            target_speed = self.speed * self.speed_modifier
+            self.get_logger().info(f"No speed limit applied | Target Speed: {target_speed:.2f}")
 
         avg = (left + right) / 2
         speed_error = target_speed - avg
