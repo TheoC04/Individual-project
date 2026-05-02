@@ -144,7 +144,7 @@ class MotorDriverNode(Node):
         
         base = (
             self.Kp_speed * speed_error  +
-            self.Ki_speed * self.speed_error_sum
+            self.Ki_speed * self.speed_error_sum * 0 # integral term (currently disabled, set to 0 for testing
         )
 
 
