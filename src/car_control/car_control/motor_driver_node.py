@@ -38,7 +38,7 @@ class MotorDriverNode(Node):
         
         self.steering_angle = 1500  # Initialize steering angle
         self.last_steering_angle = 1500  # Track last sent servo value
-        self.steering_deadband = 40  # Ignore changes smaller than this
+        self.steering_deadband = 150  # Ignore changes smaller than this
 
         self.subscription = self.create_subscription(
             SetVelocity,
@@ -156,8 +156,8 @@ class MotorDriverNode(Node):
         )
 
 
-        left_cmd  = avg - correction
-        right_cmd = avg - correction # invert right motor
+        left_cmd  = target_speed - correction
+        right_cmd = target_speed - correction # invert right motor
         right_cmd = -right_cmd
 
 
