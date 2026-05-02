@@ -21,7 +21,7 @@ class MotorDriverNode(Node):
 
         self.Kp_diff = 0.02   # proportional gain (tune this)
 
-        self.Kp_speed = 0.1   # proportional gain for speed control (tune this)
+        self.Kp_speed = 0.01   # proportional gain for speed control (tune this)
         self.Ki_speed = 0.01  # integral gain for speed control (tune this)
         self.speed_error_sum = 0   # integral term accumulator for speed control
         self.speed = 0
@@ -133,9 +133,9 @@ class MotorDriverNode(Node):
         speeds = self.read_motor_speeds()
 
         left = speeds[0]
-        right = speeds[2]
+        right = -speeds[2] # Invert right motor speed to match direction
 
-        error = left + right
+        error = left - right
         # proportional correction  (for same speed)
         correction = self.Kp_diff * error 
 
@@ -156,8 +156,8 @@ class MotorDriverNode(Node):
         )
 
 
-        left_cmd  = base - correction
-        right_cmd = base - correction # invert right motor
+        left_cmd  = avg - correction
+        right_cmd = avg - correction # invert right motor
         right_cmd = -right_cmd
 
 
