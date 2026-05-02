@@ -127,6 +127,7 @@ class MotorDriverNode(Node):
     def control_loop(self):
         # Update servo only if steering angle changed significantly
         if abs(self.steering_angle - self.last_steering_angle) > self.steering_deadband:
+            self.get_logger().info(f"Updating steering angle: {self.steering_angle}" f"(last: {self.last_steering_angle})" f" (difference: {abs(self.steering_angle - self.last_steering_angle)})" )
             lgpio.tx_servo(self.h, self.pin, self.steering_angle)
             self.last_steering_angle = self.steering_angle
         
