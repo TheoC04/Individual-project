@@ -90,13 +90,6 @@ class XboxDriveNode(Node):
         steer_pulse = int(steer_pulse)
 
         self.get_logger().info(f"Speed: {speed} | Steering: {steer_pulse}")
-
-        # Get encoder speeds (placeholder values - replace with actual encoder reads)
-        left_encoder = 0  # Replace with actual left encoder reading
-        right_encoder = 0  # Replace with actual right encoder reading
-
-        # Synchronize motor speeds based on encoder feedback
-        left_speed, right_speed = self.sync_motor_speeds(speed, speed, left_encoder, right_encoder)
         
         # Publish message
         msg = SetVelocity()
