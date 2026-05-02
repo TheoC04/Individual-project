@@ -20,6 +20,7 @@ class MotorDriverNode(Node):
         super().__init__('motor_driver_node')
 
         self.Kp_diff = 0.02   # proportional gain (tune this)
+
         self.Kp_speed = 0.1   # proportional gain for speed control (tune this)
         self.Ki_speed = 0.01  # integral gain for speed control (tune this)
         self.speed_error_sum = 0   # integral term accumulator for speed control
@@ -29,15 +30,15 @@ class MotorDriverNode(Node):
         self.max_speed = 80
         self.min_speed = -80
         self.kp_turn = 0.1
-        self.dt = 0.1  # time step for integral calculation
+        self.dt = 0.01  # time step for integral calculation
 
         self.prev_encoder = [0, 0, 0, 0]
         self.prev_time = time.time()
-        self.timer = self.create_timer(0.1, self.control_loop)
+        self.timer = self.create_timer(0.01, self.control_loop)
         
         self.steering_angle = 1500  # Initialize steering angle
         self.last_steering_angle = 1500  # Track last sent servo value
-        self.steering_deadband = 10  # Ignore changes smaller than this
+        self.steering_deadband = 40  # Ignore changes smaller than this
 
         self.subscription = self.create_subscription(
             SetVelocity,
