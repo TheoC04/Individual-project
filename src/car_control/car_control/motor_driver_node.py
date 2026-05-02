@@ -34,7 +34,7 @@ class MotorDriverNode(Node):
 
         self.prev_encoder = [0, 0, 0, 0]
         self.prev_time = time.time()
-        self.timer = self.create_timer(0.01, self.control_loop)
+        self.timer = self.create_timer(0.02, self.control_loop) # 50 Hz control loop
         
         self.steering_angle = 1500  # Initialize steering angle
         self.last_steering_angle = 1500  # Track last sent servo value
@@ -81,7 +81,12 @@ class MotorDriverNode(Node):
         # Store steering angle for control loop to handle
         steer_pulse = msg.steering_angle
         steer_pulse = max(1000, min(2000, steer_pulse))  # Constrain to valid range
-        self.steering_angle = int(steer_pulse)
+
+        alpha = 0.2  # smoothing factor (0 = heavy smoothing, 1 = no smoothing)
+
+        self.steering_angle = int(
+            alpha * steer_pulse + (1 - alpha) * self.steering_angle
+        )
         
         self.get_logger().debug(f"Received: speed={self.speed}, steer_pulse={self.steering_angle}")
         self.get_logger().debug("subscribed data: speed=%d, steering_angle=%.2f" % (msg.speed, msg.steering_angle))
