@@ -85,12 +85,11 @@ class MotorDriverNode(Node):
         steer_pulse = msg.steering_angle
         steer_pulse = max(1000, min(2000, steer_pulse))  # Constrain to valid range
 
-        self.header = msg.header
+        self.speed_header = msg.header
         t_capture = Time.from_msg(msg.header.stamp)
         t_now = self.get_clock().now()
         delay = (t_now - t_capture).nanoseconds * 1e-9
-        self.get_logger().info(f"Control pipeline latency: {delay:.3f} seconds")
-
+        self.get_logger().info(f"SetVelocity message latency: {delay:.3f} seconds")
         alpha = 0.2  # smoothing factor (0 = heavy smoothing, 1 = no smoothing)
 
         self.steering_angle = int(
@@ -103,7 +102,7 @@ class MotorDriverNode(Node):
     def speed_limit_callback(self, msg):
         self.get_logger().info(f"Received speed limit: {msg.data:.2f}")
         self.speed_limit = msg.data * 100  # Convert from 0-1 to 0-100 scale
-        self.header = msg.header
+        self.speed_limit_header = msg.header
         t_capture = Time.from_msg(msg.header.stamp)
         t_now = self.get_clock().now()
         delay = (t_now - t_capture).nanoseconds * 1e-9
@@ -146,7 +145,7 @@ class MotorDriverNode(Node):
     def control_loop(self):
         # Update servo only if steering angle changed significantly
         if abs(self.steering_angle - self.last_steering_angle) > self.steering_deadband:
-            self.get_logger().info(f"Updating steering angle: {self.steering_angle}" f"(last: {self.last_steering_angle})" f" (difference: {abs(self.steering_angle - self.last_steering_angle)})" )
+            self.get_logger().info(f" steering angle: {self.steering_angle}" f"(last: {self.last_steering_angle})" f" (difference: {abs(self.steering_angle - self.last_steering_angle)})" )
             #lgpio.tx_servo(self.h, self.pin, self.steering_angle)
             self.last_steering_angle = self.steering_angle
         
@@ -161,10 +160,10 @@ class MotorDriverNode(Node):
 
         if self.speed_limit is not None:
             target_speed = min(self.speed, self.speed_limit) * self.speed_modifier
-            self.get_logger().info(f"Applying speed limit: {self.speed_limit:.2f} | Target Speed: {target_speed:.2f}")
+            self.get_logger().info(f" speed limit: {self.speed_limit:.2f} | Target Speed: {target_speed:.2f}")
         else:
             target_speed = self.speed * self.speed_modifier
-            self.get_logger().info(f"No speed limit applied | Target Speed: {target_speed:.2f}")
+            self.get_logger().info(f"No speed limit | Target Speed: {target_speed:.2f}")
 
         avg = (left + right) / 2
         speed_error = target_speed - avg
@@ -213,6 +212,7 @@ class MotorDriverNode(Node):
         except Exception as e:
             self.get_logger().error(f"I2C Write Failed during shutdown: {e}")
         super().destroy_node()
+        time.sleep(0.1)  # Ensure commands are sent before shutdown
 
 
 def main(args=None):
