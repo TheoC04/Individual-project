@@ -402,6 +402,9 @@ def method_1(self, frame, header):
             point_msg.point.y = float(target_point[1])
             point_msg.point.z = 0.0
             self.point_publisher.publish(point_msg)
+            delay = (self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9
+            self.get_logger().info(f"Published target point: ({point_msg.point.x:.2f}, {point_msg.point.y:.2f}) | Latency: {delay:.3f} seconds")
+
         else:
             self.get_logger().debug("No valid target point detected, skipping point publish.")
 
@@ -454,7 +457,7 @@ def method_2(self, frame, header):
             t_now = self.get_clock().now()
             delay = (t_now - t_capture).nanoseconds * 1e-9
             self.get_logger().info(f"Target point message latency: {delay:.3f} seconds")
-            
+
             self.point_publisher.publish(point_msg)
         else:
             self.get_logger().debug("No valid target point detected, skipping point publish.")
