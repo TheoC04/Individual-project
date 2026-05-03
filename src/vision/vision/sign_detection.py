@@ -41,6 +41,10 @@ class TrafficSignDetector(Node):
     def image_callback(self, msg):
 
         t_capture = Time.from_msg(msg.header.stamp)
+        t_now = self.get_clock().now()
+        delay = (t_now - t_capture).nanoseconds * 1e-9
+        self.get_logger().info(f"Image message latency: {delay:.3f} seconds")
+        
         # Convert compressed image → OpenCV frame
         np_arr = np.frombuffer(msg.data, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)

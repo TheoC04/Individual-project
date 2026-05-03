@@ -39,6 +39,9 @@ class SignControl(Node):
         self.get_logger().info(f"Confidence: {confidence:.2f}")
         self.header = msg.header
         t_capture = Time.from_msg(msg.header.stamp)
+        t_now = self.get_clock().now()
+        delay = (t_now - t_capture).nanoseconds * 1e-9
+        self.get_logger().info(f"Sign message latency: {delay:.3f}")
 
         # --- Decision logic ---
         if sign == "stop" and confidence >= confidence_threshold:

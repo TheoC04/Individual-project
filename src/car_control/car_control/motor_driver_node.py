@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from messages.msg import SetVelocity, Float32Stamped
 from smbus2 import SMBus
+from rclpy.time import Time
 import time
 import lgpio
 
@@ -19,7 +20,7 @@ class MotorDriverNode(Node):
     def __init__(self):
         super().__init__('motor_driver_node')
 
-        self.speed_modifier = 1.0  # Scale factor for speed commands
+        self.speed_modifier = 0.3  # Scale factor for speed commands
 
         self.Kp_diff = 0.1   # proportional gain (tune this)
 
@@ -96,6 +97,11 @@ class MotorDriverNode(Node):
     def speed_limit_callback(self, msg):
         self.get_logger().info(f"Received speed limit: {msg.data:.2f}")
         self.speed_limit = msg.data * 100  # Convert from 0-1 to 0-100 scale
+        self.header = msg.header
+        t_capture = Time.from_msg(msg.header.stamp)
+        t_now = self.get_clock().now()
+        delay = (t_now - t_capture).nanoseconds * 1e-9
+        self.get_logger().info(f"Speed limit message latency: {delay:.3f} seconds")
 
     def read_motor_speeds(self):
         try:
