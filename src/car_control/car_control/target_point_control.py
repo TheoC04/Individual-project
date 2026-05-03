@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from messages.msg import SetVelocity
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 
 # -------------------
 # CONFIG
@@ -37,7 +37,7 @@ class TargetPointControlNode(Node):
         )
 
         self.subscription = self.create_subscription(
-            Point,
+            PointStamped,
             '/vision/target_point',
             self.target_point_callback,
             10
@@ -53,9 +53,14 @@ class TargetPointControlNode(Node):
 
     
     def target_point_callback(self, msg):
-        self.get_logger().info(f"Received target point: ({msg.x}, {msg.y})")
-        self.target_x = msg.x
-        self.target_y = msg.y
+        self.get_logger().info(f"Received target point: ({msg.point.x}, {msg.point.y})")
+        self.target_x = msg.point.x
+        self.target_y = msg.point.y
+        self.header = msg.header
+        t_capture = rclpy.time.Time.from_msg(msg.header.stamp)
+        t_now = self.get_clock().now()
+        delay = (t_now - t_capture).nanoseconds * 1e-9
+        self.get_logger().info(f"Target point message latency: {delay:.3f} seconds")
 
     def control_loop(self):
         if not hasattr(self, 'target_x') or not hasattr(self, 'target_y'):
@@ -85,8 +90,9 @@ class TargetPointControlNode(Node):
         cmd_msg.speed = int(speed)
         cmd_msg.steering_angle = int(STEER_CENTER + turn * STEER_RANGE)
         cmd_msg.rotation = 0
+        cmd_msg.header.stamp = self.header.stamp  # Use the same timestamp as the target point message
         self.publisher_.publish(cmd_msg)
-        self.get_logger().info(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")        
+        self.get_logger().info(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")       
         
 
     def destroy_node(self):

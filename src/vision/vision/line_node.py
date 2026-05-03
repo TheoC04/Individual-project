@@ -396,10 +396,11 @@ def method_1(self, frame, header):
         # Publish target point for pure pursuit
         target_point = detector.select_target_point(curve, frame)
         if target_point is not None:
-            point_msg = geometry_msgs.msg.Point()
-            point_msg.x = float(target_point[0])
-            point_msg.y = float(target_point[1])
-            point_msg.z = 0.0
+            point_msg = geometry_msgs.msg.PointStamped()
+            point_msg.header = header  # preserve original timestamp and frame_id
+            point_msg.point.x = float(target_point[0])
+            point_msg.point.y = float(target_point[1])
+            point_msg.point.z = 0.0
             self.point_publisher.publish(point_msg)
         else:
             self.get_logger().debug("No valid target point detected, skipping point publish.")
@@ -444,10 +445,16 @@ def method_2(self, frame, header):
         # Publish target point for pure pursuit
         target_point = detector.select_target_point(curve, frame)
         if target_point is not None:
-            point_msg = geometry_msgs.msg.Point()
-            point_msg.x = float(target_point[0])
-            point_msg.y = float(target_point[1])
-            point_msg.z = 0.0
+            point_msg = geometry_msgs.msg.PointStamped()
+            point_msg.header = header  # preserve original timestamp and frame_id
+            point_msg.point.x = float(target_point[0])
+            point_msg.point.y = float(target_point[1])
+            point_msg.point.z = 0.0
+            t_capture = rclpy.time.Time.from_msg(header.stamp)
+            t_now = self.get_clock().now()
+            delay = (t_now - t_capture).nanoseconds * 1e-9
+            self.get_logger().info(f"Target point message latency: {delay:.3f} seconds")
+            
             self.point_publisher.publish(point_msg)
         else:
             self.get_logger().debug("No valid target point detected, skipping point publish.")
@@ -489,7 +496,7 @@ class LineDetectionNode(Node):
         )
 
         self.point_publisher = self.create_publisher(
-            geometry_msgs.msg.Point,
+            geometry_msgs.msg.PointStamped,
             '/vision/target_point',
             10
         )

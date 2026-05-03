@@ -85,6 +85,12 @@ class MotorDriverNode(Node):
         steer_pulse = msg.steering_angle
         steer_pulse = max(1000, min(2000, steer_pulse))  # Constrain to valid range
 
+        self.header = msg.header
+        t_capture = Time.from_msg(msg.header.stamp)
+        t_now = self.get_clock().now()
+        delay = (t_now - t_capture).nanoseconds * 1e-9
+        self.get_logger().info(f"Control pipeline latency: {delay:.3f} seconds")
+
         alpha = 0.2  # smoothing factor (0 = heavy smoothing, 1 = no smoothing)
 
         self.steering_angle = int(
@@ -101,7 +107,7 @@ class MotorDriverNode(Node):
         t_capture = Time.from_msg(msg.header.stamp)
         t_now = self.get_clock().now()
         delay = (t_now - t_capture).nanoseconds * 1e-9
-        self.get_logger().info(f"Speed limit message latency: {delay:.3f} seconds")
+        self.get_logger().info(f"Speed limit pipeline latency: {delay:.3f} seconds")
 
     def read_motor_speeds(self):
         try:
