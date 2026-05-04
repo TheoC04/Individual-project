@@ -35,7 +35,10 @@ class TargetPointControlNode(Node):
             '/chassis_control/set_velocity',
             10
         )
-
+        self.subscription.qos_profile = rclpy.qos.QoSProfile(
+            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
         self.subscription = self.create_subscription(
             PointStamped,
             '/vision/target_point',
