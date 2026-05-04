@@ -392,6 +392,7 @@ def method_1(self, frame, header):
         #output = detector.draw_lines(lines) #also draws lines on output
         t_now = self.get_clock().now()
 
+
         curve, curve_output = detector.detect_curve(roi_frame) #also draws curve points on output
         
         # Publish target point for pure pursuit
@@ -431,7 +432,7 @@ def method_1(self, frame, header):
 
         # Publish combined result
         t_image_publish = self.get_clock().now()
-        self.get_logger().debug(f"Publishing line detection image | Latency: {(self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9:.3f} seconds | Processing time: {(t_image_publish - t_now).nanoseconds * 1e-9:.3f} seconds")
+        self.get_logger().info(f"Publishing line detection image | input Latency: {(t_now - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9:.3f} seconds | Processing time: {(t_image_publish - t_now).nanoseconds * 1e-9:.3f} seconds")
         out_msg = self.bridge.cv2_to_imgmsg(boundary_image, encoding='bgr8')
         out_msg.header = header  # preserve original timestamp and frame_id
         self.image_publisher.publish(out_msg)  

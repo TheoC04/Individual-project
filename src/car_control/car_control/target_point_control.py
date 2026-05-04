@@ -35,15 +35,12 @@ class TargetPointControlNode(Node):
             '/chassis_control/set_velocity',
             10
         )
-        self.subscription.qos_profile = rclpy.qos.QoSProfile(
-            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
-            depth=1
-        )
+
         self.subscription = self.create_subscription(
             PointStamped,
             '/vision/target_point',
             self.target_point_callback,
-            10
+            qos_profile=rclpy.qos.QoSProfile(depth=1, reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT)
         )
         
         # Create timer (30 Hz loop)
