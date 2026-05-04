@@ -396,6 +396,8 @@ def method_1(self, frame, header):
         
         # Publish target point for pure pursuit
         target_point = detector.select_target_point(curve, frame)
+        delay = (self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9
+        prossessing_time = (self.get_clock().now() - t_now).nanoseconds * 1e-9
         if target_point is not None:
             point_msg = geometry_msgs.msg.PointStamped()
             point_msg.header = header  # preserve original timestamp and frame_id
@@ -403,12 +405,11 @@ def method_1(self, frame, header):
             point_msg.point.y = float(target_point[1])
             point_msg.point.z = 0.0
             self.point_publisher.publish(point_msg)
-            delay = (self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9
             prossessing_time = (self.get_clock().now() - t_now).nanoseconds * 1e-9
             self.get_logger().info(f"target point: ({point_msg.point.x:.2f}, {point_msg.point.y:.2f}) | Latency: {delay:.3f}  | time: {prossessing_time:.3f} ")
 
         else:
-            self.get_logger().debug("No valid target point detected, skipping point publish.")
+            self.get_logger().debug(f"No valid target point detected, skipping point publish. | Latency: {delay:.3f} seconds")
 
         # Highlight white regions
         mask, white_highlight_image = detector.highlight_white(frame)
@@ -429,6 +430,8 @@ def method_1(self, frame, header):
         )
 
         # Publish combined result
+        t_image_publish = self.get_clock().now()
+        self.get_logger().debug(f"Publishing line detection image | Latency: {(self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9:.3f} seconds | Processing time: {(t_image_publish - t_now).nanoseconds * 1e-9:.3f} seconds")
         out_msg = self.bridge.cv2_to_imgmsg(boundary_image, encoding='bgr8')
         out_msg.header = header  # preserve original timestamp and frame_id
         self.image_publisher.publish(out_msg)  

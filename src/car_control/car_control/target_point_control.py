@@ -95,7 +95,7 @@ class TargetPointControlNode(Node):
         cmd_msg.rotation = 0
         cmd_msg.header.stamp = self.header.stamp  # Use the same timestamp as the target point message
         self.publisher_.publish(cmd_msg)
-        self.get_logger().info(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")       
+        self.get_logger().debug(f"Published command: speed={cmd_msg.speed}, steering_angle={cmd_msg.steering_angle}")       
         
 
     def destroy_node(self):
