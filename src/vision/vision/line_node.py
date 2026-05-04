@@ -489,6 +489,12 @@ class LineDetectionNode(Node):
             CompressedImage,
             '/camera/image_raw/compressed',
             self.image_callback,
+            qos_profile=rclpy.qos.QoSProfile(depth=1, reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT)
+        )
+        self.subscription = self.create_subscription(
+            CompressedImage,
+            '/camera/image_raw/compressed',
+            self.image_callback,
             10
         )
 
