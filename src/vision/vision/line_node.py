@@ -390,6 +390,7 @@ def method_1(self, frame, header):
         #edges = detector.preprocess()
         #lines = detector.detect_lines(edges)
         #output = detector.draw_lines(lines) #also draws lines on output
+        t_now = self.get_clock().now()
 
         curve, curve_output = detector.detect_curve(roi_frame) #also draws curve points on output
         
@@ -403,7 +404,8 @@ def method_1(self, frame, header):
             point_msg.point.z = 0.0
             self.point_publisher.publish(point_msg)
             delay = (self.get_clock().now() - rclpy.time.Time.from_msg(header.stamp)).nanoseconds * 1e-9
-            self.get_logger().info(f"Published target point: ({point_msg.point.x:.2f}, {point_msg.point.y:.2f}) | Latency: {delay:.3f} seconds")
+            prossessing_time = (self.get_clock().now() - t_now).nanoseconds * 1e-9
+            self.get_logger().info(f"target point: ({point_msg.point.x:.2f}, {point_msg.point.y:.2f}) | Latency: {delay:.3f}  | time: {prossessing_time:.3f} ")
 
         else:
             self.get_logger().debug("No valid target point detected, skipping point publish.")
