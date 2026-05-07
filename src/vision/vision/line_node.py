@@ -293,7 +293,7 @@ class LineDetector:
         min_road_width = 0
         max_road_width = 30
 
-        for y in range(int(h * 0.9), int(h * 0.5), -5):
+        for y in range(int(h * 0.9), int(h * 0.3), -5):
 
             xs = np.where(mask[y] > 0)[0]
             if len(xs) == 0:
@@ -492,16 +492,10 @@ class LineDetectionNode(Node):
         self.bridge = CvBridge()
 
         self.subscription = self.create_subscription(
-            CompressedImage,
-            '/camera/image_raw/compressed',
+            Image,   # Image,  CompressedImage
+            '/camera/image_control',   #  /camera/image_control  /camera/image_raw/compressed 
             self.image_callback,
             qos_profile=rclpy.qos.QoSProfile(depth=1, reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT)
-        )
-        self.subscription = self.create_subscription(
-            CompressedImage,
-            '/camera/image_raw/compressed',
-            self.image_callback,
-            10
         )
 
         self.image_publisher = self.create_publisher(
@@ -520,14 +514,14 @@ class LineDetectionNode(Node):
 
     def image_callback(self, msg):
 
-        # Convert ROS image → OpenCV
+        # Convert ROS image → OpenCV,//////////////////
         self.get_logger().debug("Received image frame, converting to OpenCV format.")
         np_arr = np.frombuffer(msg.data, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)        
         self.get_logger().debug("Received image frame for processing.")
 
-        #method_2(self, frame, msg.header)
-        method_1(self, frame, msg.header)
+        method_2(self, frame, msg.header)
+        #method_1(self, frame, msg.header)
         
 
 
